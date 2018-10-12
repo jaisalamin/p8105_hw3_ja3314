@@ -9,8 +9,71 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
+library(p8105.datasets)
+library(openintro)
+
+
 ```
 
+## Problem 1
+
+Reading and cleaning BRFSS data:
+```{r}
+brfss_df = filter(brfss_smart2010, Topic == "Overall Health", !is.na(Response)) %>% 
+  janitor::clean_names() %>% 
+  mutate(response = factor(response, levels = c("Excellent", "Very good", "Good", "Fair", "Poor")))
+```
+
+States that were observed at 7 locations in 2002:
+```{r}
+brfss_df %>% 
+  filter(year == 2002) %>%
+  distinct(locationdesc, .keep_all = TRUE) %>% 
+  count(locationabbr) %>%
+  filter(n == 7) %>% 
+  pull(locationabbr) %>% 
+  abbr2state()
+```
+
+Spaghetti plot of number of locations in each state in 2002-2010:
+```{r}
+brfss_df %>%
+  group_by(locationabbr, year) %>%
+  distinct(locationdesc, .keep_all = TRUE) %>%
+  summarize(n = n()) %>% 
+  ggplot(aes(x = year, y = n, color = locationabbr)) +
+           geom_line(size = 0.3)
+```
+
+Make a table showing, for the years 2002, 2006, and 2010, the mean and standard deviation of the proportion of “Excellent” responses across locations in NY State.
+```{r}
+brfss_df %>%
+  filter(year == 2002 | year == 2006 | year == 2010) %>% 
+  filter(locationabbr == "NY") %>% 
+  select(year, locationabbr, locationdesc, response, sample_size) %>% 
+  group_by(locationdesc, year) %>% 
+  mutate(sum = sum(sample_size)) %>%
+  filter(response == "Excellent") %>%
+  mutate(prop_excel = sample_size/sum) %>%
+  group_by(year) %>% 
+  summarize(mean(prop_excel), sd(prop_excel))
+```
+
+For each year and state, compute the average proportion in each response category (taking the average across locations in a state). Make a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time.
+```{r, message = FALSE}
+brfss_df %>% 
+  select(year, locationabbr, locationdesc, response, sample_size) %>%
+  group_by(locationabbr, year) %>%
+  mutate(sum_state = sum(sample_size)) %>% 
+  group_by(response, locationabbr, year) %>% 
+  mutate(sum_response = sum(sample_size)) %>% 
+  mutate(prop = sum_response/sum_state) %>%
+  select(year, locationabbr, prop) %>%
+  ggplot(aes(x = year, y = prop)) +
+  geom_point(alpha = 0.5) +
+  facet_grid(~response)
+
+```
 
 
 
