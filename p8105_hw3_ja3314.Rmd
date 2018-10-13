@@ -56,7 +56,8 @@ brfss_df %>%
   filter(response == "Excellent") %>%
   mutate(prop_excel = sample_size/sum) %>%
   group_by(year) %>% 
-  summarize(mean(prop_excel), sd(prop_excel))
+  summarize(mean(prop_excel), sd(prop_excel)) %>% 
+  knitr::kable()
 ```
 
 For each year and state, compute the average proportion in each response category (taking the average across locations in a state). Make a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time.
@@ -73,6 +74,56 @@ brfss_df %>%
   geom_point(alpha = 0.5) +
   facet_grid(~response)
 
+```
+
+## Problem 2
+
+The `instacart` dataset is a tibble data frame with dimensions `r nrow(instacart)` rows and `r ncol(instacart)` columns. It contains information on specific products -- such as their names and what aisle they are located on --  as well as information about the individual orders themselves. 
+
+**How many aisles are there and which aisles are the most items ordered from?**
+```{r}
+nrow(distinct(instacart, aisle_id))
+
+aisle_count = count(instacart, aisle_id)
+aisle_count_name = count(instacart, aisle)
+aisle_count[which.max(aisle_count$n), 1]
+```
+
+**Make a plot that shows the number of items ordered in each aisle. Order aisles sensibly, and organize your plot so others can read it.**
+```{r}
+aisle_count %>% 
+  ggplot(aes(x = aisle_id, y = n)) +
+  geom_point()
+
+aisle_count_name %>% 
+  ggplot(aes(x = aisle, y = n)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+**Make a table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.**
+```{r}
+instacart %>% 
+  select(product_name, aisle) %>% 
+  filter(aisle == "baking ingredients" | aisle == "dog food care" | aisle == "packaged vegetables fruits") %>%
+  group_by(aisle) %>% 
+  count(product_name) %>% 
+  slice(which.max(n)) %>% 
+  knitr::kable()
+
+```
+
+**Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).**
+```{r}
+instacart %>% 
+  filter(product_name == "Pink Lady Apples" | product_name == "Coffee Ice Cream") %>%
+  select(product_name, order_dow, order_hour_of_day) %>% 
+  group_by(product_name, order_dow) %>% 
+  summarize(mean = mean(order_hour_of_day)) %>% 
+  spread(key = order_dow, value = mean) %>%
+  rename("Sunday" = "0", "Monday" = "1", "Tuesday" = "2", "Wednesday" = "3", "Thursday" = "4", "Friday" = "5", "Saturday" = "6") %>% 
+    knitr::kable()
+  
 ```
 
 
